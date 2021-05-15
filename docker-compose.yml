@@ -1,0 +1,70 @@
+version: '3.1'
+services: 
+    transaction:
+        container_name: bankaccount-transaction
+        ports:
+            - "8080:8080"
+        image: java-transaction:latest       
+        labels: 
+            kompose.image-pull-policy: Never
+        depends_on:
+            - postgres-service
+
+    balance:
+        container_name: bankaccount-balance
+        ports:
+            - "8081:8081"
+        image: java-balance:latest        
+        labels: 
+            kompose.image-pull-policy: Never
+
+    postgres-service:
+        container_name: bankaccount-postgres
+        ports: 
+            - "5432:5432"
+        image: postgresql-custom:latest
+        labels: 
+            kompose.image-pull-policy: Never
+        
+
+    mongodb-service:
+        container_name: bankaccount-mongo
+        ports: 
+            - "27017:27017"
+        image: mongo
+
+    zookeeper:
+        container_name: bankaccount-zookeeper
+        image: strimzi/kafka:0.11.3-kafka-2.1.0
+        restart: on-failure
+        command: [
+            "sh", "-c",
+            "bin/zookeeper-server-start.sh config/zookeeper.properties"
+        ]
+        ports:
+            - "2181:2181"
+        environment:
+            LOG_DIR: /tmp/logs
+    
+    kafka:
+        container_name: bankaccount-kafka
+        image: strimzi/kafka:0.11.3-kafka-2.1.0
+        command: [
+            "sh", "-c",
+            "bin/kafka-server-start.sh config/server.properties --override listeners=$${KAFKA_LISTENERS} --override advertised.listeners=$${KAFKA_ADVERTISED_LISTENERS} --override zookeeper.connect=$${KAFKA_ZOOKEEPER_CONNECT}",
+            "bin/kafka-topics.sh --create --topic transactions --zookeeper zookeeper:2181 --replication-factor 1 --partitions 1"
+        ]
+        depends_on:
+            - zookeeper
+        ports:
+            - "9092:9092"
+        environment:
+            LOG_DIR: "/tmp/logs"
+            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+            KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+            KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+            KAFKA_BROKER_ID: 1
+            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    
+
+    

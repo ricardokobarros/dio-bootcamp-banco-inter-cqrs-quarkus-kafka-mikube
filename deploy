@@ -1,0 +1,44 @@
+#/bin/bash
+
+PATH_JAR="build"
+
+echo "Criando imagem balance-service"
+cd balance-service
+gradle wrapper
+./gradlew quarkusBuild
+IMAGE_BALANCE=$(ls $PATH_JAR/*.jar | xargs -n 1 basename)
+mv $PATH_JAR/$IMAGE_BALANCE $PATH_JAR/balance.jar
+cd build
+eval $(minikube -p kompose.io docker-env) && docker build --force-rm -t java-balance .;
+
+echo "Criando imagem transaction service"
+cd ../../transaction-service
+gradle wrapper
+./gradlew quarkusBuild
+IMAGE_TRANSACTION=$(ls $PATH_JAR/*.jar | xargs -n 1 basename)
+mv $PATH_JAR/$IMAGE_TRANSACTION $PATH_JAR/transaction.jar
+cd build
+eval $(minikube -p kompose.io docker-env) && docker build --force-rm -t java-transaction .;
+
+cd ../..
+
+#PostgreSQL
+cd resources
+eval $(minikube -p kompose.io docker-env) && docker build --force-rm -t postgresql-custom .;
+cd ..
+
+echo -e "\nIniciando minikube..."
+minikube -p kompose.io start --cpus 2 --memory=4096 --driver=docker;
+minikube -p kompose.io addons enable ingress;
+minikube -p kompose.io addons enable metrics-server;
+
+kubectl create namespace kompose
+
+echo "Gerando kubefiles"
+mkdir k8s
+cd k8s
+kompose convert -f ../docker-compose.yml --volumes hostPath
+kubectl apply -f .
+
+echo -e "\nMinikube dashboard"
+minikube -p kompose.io dashboard

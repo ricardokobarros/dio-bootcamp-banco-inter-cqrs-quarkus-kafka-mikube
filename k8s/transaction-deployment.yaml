@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f ../docker-compose.yml --volumes hostPath
+    kompose.image-pull-policy: Never
+    kompose.version: 1.22.0 (955b78124)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: transaction
+  name: transaction
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: transaction
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f ../docker-compose.yml --volumes hostPath
+        kompose.image-pull-policy: Never
+        kompose.version: 1.22.0 (955b78124)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: transaction
+    spec:
+      containers:
+        - image: java-transaction:latest
+          imagePullPolicy: Never
+          name: bankaccount-transaction
+          ports:
+            - containerPort: 8080
+          resources: {}
+      restartPolicy: Always
+status: {}

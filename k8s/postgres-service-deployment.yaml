@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f ../docker-compose.yml --volumes hostPath
+    kompose.image-pull-policy: Never
+    kompose.version: 1.22.0 (955b78124)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: postgres-service
+  name: postgres-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: postgres-service
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f ../docker-compose.yml --volumes hostPath
+        kompose.image-pull-policy: Never
+        kompose.version: 1.22.0 (955b78124)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: postgres-service
+    spec:
+      containers:
+        - image: postgresql-custom:latest
+          imagePullPolicy: Never
+          name: bankaccount-postgres
+          ports:
+            - containerPort: 5432
+          resources: {}
+      restartPolicy: Always
+status: {}
